@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <title>Admin Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a3a;--text:#e4e4ec;--dim:#8888a0;--accent:#6c5ce7;--green:#00d68f;--red:#ff6b6b;--radius:12px;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(108,92,231,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(108,92,231,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+    /* Login Gate */
+    .login-gate{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+    .login-gate.hidden{display:none}
+    .login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:40px;width:360px;text-align:center}
+    .login-box h2{font-size:1.4rem;margin-bottom:6px;background:linear-gradient(135deg,var(--accent),#a29bfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .login-box p{font-size:.8rem;color:var(--dim);margin-bottom:24px;font-family:var(--mono)}
+    .login-box input{width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:.9rem;outline:none;margin-bottom:16px;text-align:center;letter-spacing:4px}
+    .login-box input:focus{border-color:var(--accent)}
+    .login-box button{width:100%;padding:12px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:var(--font);font-weight:600;font-size:.9rem;cursor:pointer;transition:all .2s}
+    .login-box button:hover{background:#7c6cf0;transform:translateY(-1px)}
+    .login-err{color:var(--red);font-size:.8rem;margin-top:10px;min-height:20px}
+
+    /* Admin Panel */
+    .admin-panel{display:none;position:relative;z-index:1;max-width:800px;margin:0 auto;padding:30px 20px 80px}
+    .admin-panel.active{display:block}
+    .admin-header{text-align:center;margin-bottom:30px}
+    .admin-header h1{font-size:1.6rem;background:linear-gradient(135deg,var(--accent),#a29bfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+    .admin-header p{font-size:.8rem;color:var(--dim);font-family:var(--mono)}
+    .admin-header .line{width:50px;height:3px;background:linear-gradient(90deg,var(--accent),#a29bfe);border-radius:2px;margin:12px auto 0}
+
+    /* Sections */
+    .section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;text-align:center}
+    .section-head{display:flex;align-items:center;justify-content:center;padding:16px 20px;cursor:pointer;user-select:none;transition:background .2s;gap:12px}
+    .section-head:hover{background:var(--surface2)}
+    .section-head h3{font-size:.9rem;font-weight:600;display:flex;align-items:center;gap:8px}
+    .section-head .arrow{transition:transform .3s;font-size:.7rem;color:var(--dim)}
+    .section.open .arrow{transform:rotate(180deg)}
+    .section-body{display:none;padding:16px 20px;border-top:1px solid var(--border);background:var(--surface2);text-align:center}
+    .section.open .section-body{display:block}
+
+    /* Form Fields */
+    .field{margin-bottom:14px;text-align:center}
+    .field label{display:block;font-size:.7rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;text-align:center}
+    .field input,.field textarea{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:.85rem;outline:none;transition:border-color .2s;resize:vertical;text-align:center}
+    .field input:focus,.field textarea:focus{border-color:var(--accent)}
+    .field textarea{min-height:80px}
+    .field-row{display:flex;gap:10px;justify-content:center}
+    .field-row .field{flex:1}
+
+    /* Buttons */
+    .save-all{display:block;width:100%;padding:14px;background:var(--accent);border:none;border-radius:var(--radius);color:#fff;font-family:var(--font);font-weight:700;font-size:.95rem;cursor:pointer;transition:all .2s;margin-top:20px;text-align:center}
+    .save-all:hover{background:#7c6cf0;transform:translateY(-2px);box-shadow:0 8px 30px rgba(108,92,231,.3)}
+    .reset-btn{display:block;width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--dim);font-family:var(--font);font-weight:500;font-size:.85rem;cursor:pointer;transition:all .2s;margin-top:8px;text-align:center}
+    .reset-btn:hover{border-color:var(--red);color:var(--red)}
+
+    .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 24px;border-radius:10px;font-size:.85rem;z-index:1000;opacity:0;transition:all .35s;pointer-events:none}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .logout-btn{position:fixed;top:16px;right:16px;padding:8px 16px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--dim);font-family:var(--font);font-size:.75rem;cursor:pointer;z-index:10;transition:all .2s;text-align:center}
+    .logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+    /* Project/Cert repeaters */
+    .repeater-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;position:relative;text-align:center}
+    .repeater-item .remove-item{position:absolute;top:8px;right:8px;width:24px;height:24px;border:none;border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center}
+    .repeater-item .remove-item:hover{background:rgba(255,107,107,.1);color:var(--red)}
+    .add-item-btn{width:100%;padding:10px;background:transparent;border:1px dashed var(--border);border-radius:8px;color:var(--dim);font-family:var(--font);font-size:.8rem;cursor:pointer;transition:all .2s}
+    .add-item-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+    @media(max-width:500px){.field-row{flex-direction:column}.admin-panel{padding:20px 12px 60px}.login-box{width:90%;padding:30px 20px}}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div class="login-gate" id="login-gate">
+  <div class="login-box">
+    <h2>🔒 Admin Access</h2>
+    <p>LIBINESH R U</p>
+    <input type="password" id="admin-pass" placeholder="••••••••" autofocus/>
+    <button onclick="tryLogin()">UNLOCK</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="admin-panel">
+  <button class="logout-btn" onclick="logout()">🔓 Logout</button>
+
+  <div class="admin-header">
+    <h1>LIBINESH R U</h1>
+    <p>⚙️ portfolio admin panel</p>
+    <div class="line"></div>
+  </div>
+
+  <!-- HERO -->
+  <div class="section open" id="sec-hero">
+    <div class="section-head" onclick="toggleSection('sec-hero')">
+      <h3>🚀 Hero Section</h3><span class="arrow">▼</span>
+    </div>
+    <div class="section-body">
+      <div class="field-row">
+        <div class="field"><label>First Name</label><input id="hero-firstname" placeholder="LIBINESH"/></div>
+        <div class="field"><label>Last Name</label><input id="hero-lastname" placeholder="R U"/></div>
+      </div>
+      <div class="field"><label>Tagline (typed roles, comma separated)</label><input id="hero-roles" placeholder="Cybersecurity Student, Ethical Hacker..."/></div>
+      <div class="field"><label>Description</label><textarea id="hero-desc" placeholder="B.E Computer Science..."></textarea></div>
+      <div class="field-row">
+        <div class="field"><label>Stat 1 Value</label><input id="hero-stat1" placeholder="3"/></div>
+        <div class="field"><label>Stat 1 Label</label><input id="hero-stat1-label" placeholder="Projects"/></div>
+        <div class="field"><label>Stat 2 Value</label><input id="hero-stat2" placeholder="4"/></div>
+        <div class="field"><label>Stat 2 Label</label><input id="hero-stat2-label" placeholder="Certifications"/></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="section" id="sec-about">
+    <div class="section-head" onclick="toggleSection('sec-about')">
+      <h3>👤 About Section</h3><span class="arrow">▼</span>
+    </div>
+    <div class="section-body">
+      <div class="field"><label>About Paragraph 1</label><textarea id="about-p1"></textarea></div>
+      <div class="field"><label>About Paragraph 2</label><textarea id="about-p2"></textarea></div>
+      <div class="field"><label>About Paragraph 3</label><textarea id="about-p3"></textarea></div>
+      <div class="field-row">
+        <div class="field"><label>Degree</label><input id="about-degree"/></div>
+        <div class="field"><label>Location</label><input id="about-location"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Status</label><input id="about-status"/></div>
+        <div class="field"><label>Focus</label><input id="about-focus"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Email</label><input id="about-email"/></div>
+        <div class="field"><label>Hobbies</label><input id="about-hobbies"/></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="section" id="sec-projects">
+    <div class="section-head" onclick="toggleSection('sec-projects')">
+      <h3>💻 Projects</h3><span class="arrow">▼</span>
+    </div>
+    <div class="section-body">
+      <div id="projects-list"></div>
+      <button class="add-item-btn" onclick="addProject()">+ Add Project</button>
+    </div>
+  </div>
+
+  <!-- CERTIFICATIONS -->
+  <div class="section" id="sec-certs">
+    <div class="section-head" onclick="toggleSection('sec-certs')">
+      <h3>🏅 Certifications</h3><span class="arrow">▼</span>
+    </div>
+    <div class="section-body">
+      <div id="certs-list"></div>
+      <button class="add-item-btn" onclick="addCert()">+ Add Certification</button>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="section" id="sec-contact">
+    <div class="section-head" onclick="toggleSection('sec-contact')">
+      <h3>📬 Contact Info</h3><span class="arrow">▼</span>
+    </div>
+    <div class="section-body">
+      <div class="field"><label>Contact Heading</label><input id="contact-heading" placeholder="Let's Connect"/></div>
+      <div class="field"><label>Contact Description</label><textarea id="contact-desc"></textarea></div>
+      <div class="field-row">
+        <div class="field"><label>Email</label><input id="contact-email"/></div>
+        <div class="field"><label>GitHub URL</label><input id="contact-github"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>LinkedIn URL</label><input id="contact-linkedin"/></div>
+        <div class="field"><label>TryHackMe Username</label><input id="contact-thm"/></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="save-all" onclick="saveAll()">💾 SAVE ALL CHANGES</button>
+  <button class="reset-btn" onclick="resetAll()">🗑️ Reset to Defaults</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Password (change this!) ──
+  const ADMIN_PASSWORD = 'libinesh123';
+
+  function tryLogin() {
+    const pass = document.getElementById('admin-pass').value;
+    if (pass === ADMIN_PASSWORD) {
+      sessionStorage.setItem('admin_auth', 'true');
+      document.getElementById('login-gate').classList.add('hidden');
+      document.getElementById('admin-panel').classList.add('active');
+      loadData();
+    } else {
+      document.getElementById('login-err').textContent = '// Access denied. Wrong password.';
+    }
+  }
+
+  document.getElementById('admin-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') tryLogin();
+  });
+
+  // Auto-login if session active
+  if (sessionStorage.getItem('admin_auth') === 'true') {
+    document.getElementById('login-gate').classList.add('hidden');
+    document.getElementById('admin-panel').classList.add('active');
+    setTimeout(loadData, 100);
+  }
+
+  function logout() {
+    sessionStorage.removeItem('admin_auth');
+    location.reload();
+  }
+
+  // ── Section Toggle ──
+  function toggleSection(id) {
+    document.getElementById(id).classList.toggle('open');
+  }
+
+  // ── Toast ──
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  // ── Default Data ──
+  function getDefaults() {
+    return {
+      hero: {
+        firstname: 'LIBINESH',
+        lastname: 'R U',
+        roles: 'Cybersecurity Student,Ethical Hacker in Training,Network Security Enthusiast,CTF Player & Problem Solver,Defender of the Digital World,Penetration Tester (Learning)',
+        desc: 'B.E Computer Science & Engineering student specializing in Cybersecurity. Passionate about ethical hacking, network defense, digital forensics, and building a safer digital world — one exploit at a time.',
+        stat1: '3', stat1Label: 'Projects',
+        stat2: '4', stat2Label: 'Certifications'
+      },
+      about: {
+        p1: "Hello! I'm Libinesh R U, a passionate B.E. CSE student specializing in Cybersecurity. I'm driven by deep curiosity about how systems work — and how to ethically expose their weaknesses.",
+        p2: "My focus spans network security, ethical hacking, vulnerability assessment, and digital forensics. I believe that the best defenders are those who think like attackers.",
+        p3: "I sharpen my skills on platforms like TryHackMe and Hack The Box, participate in CTF competitions, and build hands-on security projects. Always learning. Always hacking (ethically).",
+        degree: 'B.E. CSE — Cybersecurity',
+        location: 'Puducherry, India 🇮🇳',
+        status: '● Open to Internships',
+        focus: 'Ethical Hacking & Defense',
+        email: 'libineshraja1@gmail.com',
+        hobbies: 'CTF · OSINT · Linux ricing'
+      },
+      projects: [
+        { title: 'Network Vulnerability Scanner', desc: 'A Python-based automated scanner that performs network reconnaissance, detects open ports and running services, then cross-references known CVEs to generate a structured security report.', status: 'In Progress', tech: 'Python,Nmap,Socket,CVE API,JSON', github: '#', demo: '#' },
+        { title: 'Phishing Awareness Simulation', desc: 'A controlled phishing simulation platform to educate users about social engineering. Features cloned login pages, phishing email templates, and a reporting dashboard tracking awareness rates.', status: 'Completed', tech: 'HTML/CSS,JavaScript,Python Flask,SQLite', github: '#', demo: '' },
+        { title: 'Secure Password Manager', desc: 'A locally-run offline password manager using AES-256 encryption. Stores credentials in an encrypted vault with master-password protection and generates strong random passwords on demand.', status: 'Completed', tech: 'Python,AES-256,Cryptography,Tkinter', github: '#', demo: '' }
+      ],
+      certs: [
+        { name: 'Add Certification Name', issuer: 'Issuing Organization', year: '2024 · Credential ID: XXXXXXXX', link: '#' },
+        { name: 'Add Certification Name', issuer: 'Issuing Organization', year: '2024 · Credential ID: XXXXXXXX', link: '#' },
+        { name: 'Add Certification Name', issuer: 'Issuing Organization', year: '2024 · Credential ID: XXXXXXXX', link: '#' },
+        { name: 'TryHackMe — Learning Path', issuer: 'TryHackMe Platform', year: 'Ongoing · Add your rank / points', link: 'https://tryhackme.com' }
+      ],
+      contact: {
+        heading: "Let's Connect",
+        desc: "I'm actively looking for internship opportunities, open-source collaborations on security projects, and CTF teammates.",
+        email: 'libineshraja1@gmail.com',
+        github: 'https://github.com/libineshr',
+        linkedin: 'https://linkedin.com/in/libineshr',
+        thm: 'Add your THM username'
+      }
+    };
+  }
+
+  // ── Load Data into Form ──
+  function loadData() {
+    const saved = JSON.parse(localStorage.getItem('portfolio_data') || 'null');
+    const data = saved || getDefaults();
+
+    // Hero
+    document.getElementById('hero-firstname').value = data.hero.firstname || '';
+    document.getElementById('hero-lastname').value = data.hero.lastname || '';
+    document.getElementById('hero-roles').value = data.hero.roles || '';
+    document.getElementById('hero-desc').value = data.hero.desc || '';
+    document.getElementById('hero-stat1').value = data.hero.stat1 || '';
+    document.getElementById('hero-stat1-label').value = data.hero.stat1Label || '';
+    document.getElementById('hero-stat2').value = data.hero.stat2 || '';
+    document.getElementById('hero-stat2-label').value = data.hero.stat2Label || '';
+
+    // About
+    document.getElementById('about-p1').value = data.about.p1 || '';
+    document.getElementById('about-p2').value = data.about.p2 || '';
+    document.getElementById('about-p3').value = data.about.p3 || '';
+    document.getElementById('about-degree').value = data.about.degree || '';
+    document.getElementById('about-location').value = data.about.location || '';
+    document.getElementById('about-status').value = data.about.status || '';
+    document.getElementById('about-focus').value = data.about.focus || '';
+    document.getElementById('about-email').value = data.about.email || '';
+    document.getElementById('about-hobbies').value = data.about.hobbies || '';
+
+    // Projects
+    renderProjects(data.projects || []);
+
+    // Certs
+    renderCerts(data.certs || []);
+
+    // Contact
+    document.getElementById('contact-heading').value = data.contact.heading || '';
+    document.getElementById('contact-desc').value = data.contact.desc || '';
+    document.getElementById('contact-email').value = data.contact.email || '';
+    document.getElementById('contact-github').value = data.contact.github || '';
+    document.getElementById('contact-linkedin').value = data.contact.linkedin || '';
+    document.getElementById('contact-thm').value = data.contact.thm || '';
+  }
+
+  // ── Project Repeater ──
+  function renderProjects(projects) {
+    const el = document.getElementById('projects-list');
+    el.innerHTML = projects.map((p, i) => `
+      <div class="repeater-item">
+        <button class="remove-item" onclick="removeProject(${i})">✕</button>
+        <div class="field"><label>Title</label><input class="proj-title" value="${esc(p.title)}"/></div>
+        <div class="field"><label>Description</label><textarea class="proj-desc">${esc(p.desc)}</textarea></div>
+        <div class="field-row">
+          <div class="field"><label>Status</label><input class="proj-status" value="${esc(p.status)}"/></div>
+          <div class="field"><label>Tech (comma sep)</label><input class="proj-tech" value="${esc(p.tech)}"/></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>GitHub URL</label><input class="proj-github" value="${esc(p.github)}"/></div>
+          <div class="field"><label>Demo URL</label><input class="proj-demo" value="${esc(p.demo)}"/></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function addProject() {
+    const projects = collectProjects();
+    projects.push({ title: '', desc: '', status: 'In Progress', tech: '', github: '#', demo: '' });
+    renderProjects(projects);
+  }
+
+  function removeProject(i) {
+    const projects = collectProjects();
+    projects.splice(i, 1);
+    renderProjects(projects);
+  }
+
+  function collectProjects() {
+    const items = document.querySelectorAll('#projects-list .repeater-item');
+    return Array.from(items).map(item => ({
+      title: item.querySelector('.proj-title').value,
+      desc: item.querySelector('.proj-desc').value,
+      status: item.querySelector('.proj-status').value,
+      tech: item.querySelector('.proj-tech').value,
+      github: item.querySelector('.proj-github').value,
+      demo: item.querySelector('.proj-demo').value
+    }));
+  }
+
+  // ── Cert Repeater ──
+  function renderCerts(certs) {
+    const el = document.getElementById('certs-list');
+    el.innerHTML = certs.map((c, i) => `
+      <div class="repeater-item">
+        <button class="remove-item" onclick="removeCert(${i})">✕</button>
+        <div class="field"><label>Name</label><input class="cert-name" value="${esc(c.name)}"/></div>
+        <div class="field-row">
+          <div class="field"><label>Issuer</label><input class="cert-issuer" value="${esc(c.issuer)}"/></div>
+          <div class="field"><label>Year / ID</label><input class="cert-year" value="${esc(c.year)}"/></div>
+        </div>
+        <div class="field"><label>Verify Link</label><input class="cert-link" value="${esc(c.link)}"/></div>
+      </div>
+    `).join('');
+  }
+
+  function addCert() {
+    const certs = collectCerts();
+    certs.push({ name: '', issuer: '', year: '', link: '#' });
+    renderCerts(certs);
+  }
+
+  function removeCert(i) {
+    const certs = collectCerts();
+    certs.splice(i, 1);
+    renderCerts(certs);
+  }
+
+  function collectCerts() {
+    const items = document.querySelectorAll('#certs-list .repeater-item');
+    return Array.from(items).map(item => ({
+      name: item.querySelector('.cert-name').value,
+      issuer: item.querySelector('.cert-issuer').value,
+      year: item.querySelector('.cert-year').value,
+      link: item.querySelector('.cert-link').value
+    }));
+  }
+
+  // ── Save All ──
+  function saveAll() {
+    const data = {
+      hero: {
+        firstname: document.getElementById('hero-firstname').value,
+        lastname: document.getElementById('hero-lastname').value,
+        roles: document.getElementById('hero-roles').value,
+        desc: document.getElementById('hero-desc').value,
+        stat1: document.getElementById('hero-stat1').value,
+        stat1Label: document.getElementById('hero-stat1-label').value,
+        stat2: document.getElementById('hero-stat2').value,
+        stat2Label: document.getElementById('hero-stat2-label').value
+      },
+      about: {
+        p1: document.getElementById('about-p1').value,
+        p2: document.getElementById('about-p2').value,
+        p3: document.getElementById('about-p3').value,
+        degree: document.getElementById('about-degree').value,
+        location: document.getElementById('about-location').value,
+        status: document.getElementById('about-status').value,
+        focus: document.getElementById('about-focus').value,
+        email: document.getElementById('about-email').value,
+        hobbies: document.getElementById('about-hobbies').value
+      },
+      projects: collectProjects(),
+      certs: collectCerts(),
+      contact: {
+        heading: document.getElementById('contact-heading').value,
+        desc: document.getElementById('contact-desc').value,
+        email: document.getElementById('contact-email').value,
+        github: document.getElementById('contact-github').value,
+        linkedin: document.getElementById('contact-linkedin').value,
+        thm: document.getElementById('contact-thm').value
+      }
+    };
+    localStorage.setItem('portfolio_data', JSON.stringify(data));
+    toast('✅ Changes saved! Portfolio will update on next load.');
+  }
+
+  function resetAll() {
+    if (confirm('Reset all fields to defaults? This cannot be undone.')) {
+      localStorage.removeItem('portfolio_data');
+      loadData();
+      toast('🔄 Reset to defaults.');
+    }
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>
