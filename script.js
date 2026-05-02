@@ -722,14 +722,20 @@
       if (projectsGrid) {
         projectsGrid.innerHTML = d.projects.map((p, i) => {
           const delayClass = `reveal-d${(i % 3) + 1}`;
-          const statusClass = (p.status || '').toLowerCase().includes('complet') ? 'status-done' : 'status-wip';
-          const techChips = (p.tech || '').split(',').map(t => t.trim() ? `<span class="tech-chip">${t.trim()}</span>` : '').join('');
+          const statusStr = p.status ? String(p.status).toLowerCase() : '';
+          const statusClass = statusStr.includes('complet') ? 'status-done' : 'status-wip';
+          
+          let techChips = '';
+          if (p.tech) {
+            const techArr = Array.isArray(p.tech) ? p.tech : String(p.tech).split(',');
+            techChips = techArr.map(t => t.trim() ? `<span class="tech-chip">${t.trim()}</span>` : '').join('');
+          }
           
           let links = '';
-          if (p.github && p.github !== '#') {
+          if (p.github && String(p.github) !== '#') {
             links += `<a href="${p.github}" target="_blank" class="project-link-btn" aria-label="View on GitHub" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577v-2.165c-3.338.726-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.757-1.333-1.757-1.09-.745.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.3-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.236-3.22-.124-.303-.536-1.524.117-3.176 0 0 1.008-.322 3.3 1.23a11.5 11.5 0 013.003-.404c1.02.005 2.047.138 3.006.404 2.29-1.552 3.297-1.23 3.297-1.23.654 1.652.243 2.873.12 3.176.77.84 1.233 1.91 1.233 3.22 0 4.61-2.807 5.625-5.48 5.92.43.372.823 1.102.823 2.222v3.293c0 .322.218.694.825.576C20.565 21.796 24 17.298 24 12c0-6.63-5.37-12-12-12z"/></svg></a>`;
           }
-          if (p.demo && p.demo !== '#') {
+          if (p.demo && String(p.demo) !== '#') {
             links += `<a href="${p.demo}" target="_blank" class="project-link-btn" aria-label="Live Demo" title="Live Demo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>`;
           }
 
