@@ -649,16 +649,21 @@
 
 
 /* ══════════════════════════════════════════════════════════
-   18. ADMIN DATA OVERRIDE — reads from localStorage
-   (Set via hidden admin.html panel)
+   18. ADMIN DATA OVERRIDE — reads from the shared database
+   (Set via hidden admin.html panel, saved to Firestore so it
+   shows up for every visitor, not just this browser.)
 ══════════════════════════════════════════════════════════ */
-(function applyAdminData() {
-  const raw = localStorage.getItem('portfolio_data');
-  if (!raw) return;
+(async function applyAdminData() {
+  let d;
+  try {
+    d = await loadPortfolioData();
+  } catch (e) {
+    console.warn('[Admin Override] Failed to load data:', e);
+    return;
+  }
+  if (!d) return;
 
   try {
-    const d = JSON.parse(raw);
-
     // ── Hero ──
     if (d.hero) {
       const nameEl = document.querySelector('.hero-name');
