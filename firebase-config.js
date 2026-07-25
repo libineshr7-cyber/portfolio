@@ -4,19 +4,6 @@
    This is what turns "saved on my computer" into "saved for
    everyone, everywhere" — a real shared database on the web.
 
-   SETUP (takes about 3 minutes, totally free):
-   1. Go to https://console.firebase.google.com/
-   2. Click "Add project" → give it any name → finish the wizard
-      (you can turn off Google Analytics, you don't need it)
-   3. On the project's home screen, click the </> (Web) icon to
-      register a new web app → give it any nickname → Register app
-   4. Firebase shows you a `firebaseConfig` object — copy those
-      values into the object below, replacing the placeholders
-   5. In the left sidebar go to Build → Firestore Database →
-      "Create database" → Start in TEST MODE → pick any location
-   6. That's it. Reload admin.html and index.html — they'll now
-      read/write through this file automatically.
-
    IMPORTANT — Firestore "test mode" allows anyone with your
    config to read AND write your database, not just the admin
    panel. That's fine for a portfolio with no sensitive data, but
@@ -27,12 +14,12 @@
    ═══════════════════════════════════════════════════════════ */
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyD3fbQXYeE1vPYNrFxH8-667zXwU9GAtE8",
+  authDomain: "portfolio-22543.firebaseapp.com",
+  projectId: "portfolio-22543",
+  storageBucket: "portfolio-22543.firebasestorage.app",
+  messagingSenderId: "147350536861",
+  appId: "1:147350536861:web:213778c42aa7aa997a4a74"
 };
 
 // Only initialize if the placeholders have actually been replaced,
