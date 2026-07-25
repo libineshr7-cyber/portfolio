@@ -1,42 +1,59 @@
 /* ═══════════════════════════════════════════════════════════
-   FIREBASE CONFIG
-   ═══════════════════════════════════════════════════════════
-   This is what turns "saved on my computer" into "saved for
-   everyone, everywhere" — a real shared database on the web.
+   DATA STORE
+   Shared read/write layer used by both index.html (public site)
+   and admin.html (admin panel).
 
-   IMPORTANT — Firestore "test mode" allows anyone with your
-   config to read AND write your database, not just the admin
-   panel. That's fine for a portfolio with no sensitive data, but
-   it means someone who finds your config could edit your content
-   directly. If you want real protection, ask to add Firebase
-   Authentication so only a logged-in admin can write — it's a
-   quick follow-up change.
+   - Source of truth: Firestore (real database, shared by every
+     visitor, on every device).
+   - localStorage is kept only as a fast local CACHE, so the site
+     still shows the last-known content instantly and works
+     offline / before Firebase is configured. It is never the
+     source of truth once Firebase is set up.
    ═══════════════════════════════════════════════════════════ */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyD3fbQXYeE1vPYNrFxH8-667zXwU9GAtE8",
-  authDomain: "portfolio-22543.firebaseapp.com",
-  projectId: "portfolio-22543",
-  storageBucket: "portfolio-22543.firebasestorage.app",
-  messagingSenderId: "147350536861",
-  appId: "1:147350536861:web:213778c42aa7aa997a4a74"
-};
+const PORTFOLIO_COLLECTION = 'portfolio';
+const PORTFOLIO_DOC_ID     = 'data';
+const CACHE_KEY            = 'portfolio_data_cache';
 
-// Only initialize if the placeholders have actually been replaced,
-// so the site doesn't throw errors before you've set this up.
-let firebaseReady = false;
-let db = null;
-
-if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
-  try {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    firebaseReady = true;
-  } catch (e) {
-    console.warn('[Firebase] Failed to initialize:', e);
+/**
+ * Load portfolio data.
+ * Tries Firestore first; falls back to the local cache if Firebase
+ * isn't configured yet or the request fails (e.g. offline).
+ * Returns null if there is no data anywhere (use defaults).
+ */
+async function loadPortfolioData() {
+  if (typeof firebaseReady !== 'undefined' && firebaseReady && db) {
+    try {
+      const snap = await db.collection(PORTFOLIO_COLLECTION).doc(PORTFOLIO_DOC_ID).get();
+      if (snap.exists) {
+        const data = snap.data();
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        return data;
+      }
+      return null; // Firestore is reachable but no data saved yet
+    } catch (e) {
+      console.warn('[DataStore] Firestore read failed, using local cache instead:', e);
+    }
   }
-} else {
-  console.warn(
-    '[Firebase] Not configured yet. Open firebase-config.js and follow the setup steps at the top of the file.'
-  );
+
+  const cached = localStorage.getItem(CACHE_KEY);
+  return cached ? JSON.parse(cached) : null;
+}
+
+/**
+ * Save portfolio data.
+ * Always updates the local cache immediately, then writes to
+ * Firestore so every visitor sees the change. Throws if Firebase
+ * isn't configured, so the caller can show a clear error.
+ */
+async function savePortfolioData(data) {
+  localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+
+  if (!(typeof firebaseReady !== 'undefined' && firebaseReady && db)) {
+    throw new Error(
+      'Firebase is not configured yet. Open firebase-config.js and follow the setup steps at the top of the file — your changes were saved to this browser only for now.'
+    );
+  }
+
+  await db.collection(PORTFOLIO_COLLECTION).doc(PORTFOLIO_DOC_ID).set(data);
 }
